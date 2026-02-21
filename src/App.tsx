@@ -60,7 +60,7 @@ function Dashboard() {
     groups: 0
   });
   const [upcoming, setUpcoming] = React.useState<FieldServiceAssignment[]>([]);
-  const [nextAssignment, setNextAssignment] = React.useState<FieldServiceAssignment | null>(null);
+  const [nextAssignmentsByGroup, setNextAssignmentsByGroup] = React.useState<FieldServiceAssignment[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -83,20 +83,30 @@ function Dashboard() {
           territories: territories.filter(t => t.ativo).length
         });
 
-        // Sort assignments by date to find the next one
-        const sorted = [...assignments].sort((a, b) => 
-          new Date(a.data_saida).getTime() - new Date(b.data_saida).getTime()
-        );
-
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Find the first assignment that is today or in the future
-        const next = sorted.find(a => new Date(a.data_saida) >= today);
-        setNextAssignment(next || sorted[sorted.length - 1] || null);
+        // Find the next assignment for EACH group
+        const nextByGroup: FieldServiceAssignment[] = [];
+        
+        groups.forEach(group => {
+          const groupAssignments = assignments
+            .filter(a => a.grupo_id === group.id)
+            .sort((a, b) => new Date(a.data_saida).getTime() - new Date(b.data_saida).getTime());
+          
+          const next = groupAssignments.find(a => new Date(a.data_saida) >= today);
+          if (next) {
+            nextByGroup.push(next);
+          }
+        });
 
-        // Get recent assignments (last 5)
-        setUpcoming(assignments.slice(0, 5));
+        // Sort the group highlights by date
+        setNextAssignmentsByGroup(nextByGroup.sort((a, b) => 
+          new Date(a.data_saida).getTime() - new Date(b.data_saida).getTime()
+        ));
+
+        // Get recent assignments (last 8)
+        setUpcoming(assignments.slice(0, 8));
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
@@ -108,7 +118,7 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader 
         title="Dashboard" 
         description={user ? `Bem-vindo, ${user.email}. Veja o resumo da semana.` : 'Bem-vindo. Faça login para gerenciar os dados.'} 
@@ -134,58 +144,70 @@ function Dashboard() {
         </motion.div>
       )}
 
-      {/* Featured Next Assignment */}
-      {nextAssignment && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden bg-emerald-600 rounded-3xl text-white shadow-xl shadow-emerald-600/20"
-        >
-          <div className="absolute inset-0 opacity-20">
-            {nextAssignment.territorio?.mapa_imagem_url ? (
-              <img 
-                src={nextAssignment.territorio.mapa_imagem_url} 
-                alt="Mapa" 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-800" />
-            )}
-          </div>
-          <div className="relative z-10 p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-4 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider">
-                <Sparkles size={14} />
-                Próxima Saída
-              </div>
-              <h2 className="text-4xl font-black tracking-tight leading-tight">
-                {nextAssignment.territorio?.nome_territorio}
-              </h2>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-emerald-50">
-                <div className="flex items-center gap-2">
-                  <UserCircle size={20} className="text-emerald-200" />
-                  <span className="font-medium">{nextAssignment.irmao?.nome_completo}</span>
+      {/* Featured Next Assignments by Group */}
+      {nextAssignmentsByGroup.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 px-1">
+            <Sparkles size={20} className="text-amber-500" />
+            Próximas Saídas por Grupo
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {nextAssignmentsByGroup.map((next, idx) => (
+              <motion.div
+                key={next.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="relative overflow-hidden bg-emerald-600 rounded-3xl text-white shadow-xl shadow-emerald-600/20 group"
+              >
+                <div className="absolute inset-0 opacity-15 transition-opacity group-hover:opacity-25">
+                  {next.territorio?.mapa_imagem_url ? (
+                    <img 
+                      src={next.territorio.mapa_imagem_url} 
+                      alt="Mapa" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-800" />
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon size={20} className="text-emerald-200" />
-                  <span className="font-medium">{new Date(nextAssignment.data_saida).toLocaleDateString()}</span>
+                <div className="relative z-10 p-6 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-wider">
+                      {next.grupo?.nome_do_grupo}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-100 text-xs font-medium">
+                      <CalendarIcon size={14} />
+                      {new Date(next.data_saida).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-2xl font-black tracking-tight leading-tight mb-1">
+                      {next.territorio?.nome_territorio}
+                    </h4>
+                    <div className="flex items-center gap-2 text-emerald-50">
+                      <UserCircle size={18} className="text-emerald-200" />
+                      <span className="font-semibold">{next.irmao?.nome_completo}</span>
+                    </div>
+                  </div>
+
+                  {next.territorio?.mapa_imagem_url && (
+                    <div className="absolute right-4 bottom-4 w-20 h-20 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg rotate-6 group-hover:rotate-0 transition-transform duration-500 hidden sm:block">
+                      <img 
+                        src={next.territorio.mapa_imagem_url} 
+                        alt="Território" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
-            
-            {nextAssignment.territorio?.mapa_imagem_url && (
-              <div className="w-48 h-48 rounded-2xl overflow-hidden border-4 border-white/30 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
-                <img 
-                  src={nextAssignment.territorio.mapa_imagem_url} 
-                  alt="Território" 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            )}
+              </motion.div>
+            ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
