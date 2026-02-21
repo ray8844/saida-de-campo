@@ -128,7 +128,7 @@ export function Sidebar() {
             </>
           ) : (
             <button 
-              onClick={() => navigate('/configuracoes')} // This will trigger the AuthPage redirect
+              onClick={() => navigate('/login')}
               className="w-full flex items-center gap-3 px-3 py-2.5 bg-emerald-600 text-white rounded-xl transition-all font-bold shadow-lg shadow-emerald-600/20"
             >
               <LogIn size={20} />

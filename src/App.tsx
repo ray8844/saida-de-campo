@@ -33,8 +33,8 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Allow public access to Dashboard
-  const isPublicPath = location === '/';
+  // Allow public access to Dashboard and Login
+  const isPublicPath = location === '/' || location === '/login';
 
   if (!user && !isPublicPath) {
     return <AuthPage />;
@@ -268,6 +268,7 @@ export default function App() {
             <AnimatePresence mode="wait">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/login" element={<AuthPage />} />
                 <Route path="/grupos" element={<GroupsPage />} />
                 <Route path="/irmaos" element={<BrothersPage />} />
                 <Route path="/territorios" element={<TerritoriesPage />} />
