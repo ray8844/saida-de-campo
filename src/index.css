@@ -6,6 +6,9 @@
   --font-display: "Outfit", sans-serif;
 }
 
+/* Fix for dark mode variant in Tailwind v4 when using .dark class */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --bg-main: #f8fafc;
@@ -13,6 +16,7 @@
     --text-main: #0f172a;
     --text-muted: #64748b;
     --border-color: #e2e8f0;
+    --accent-color: #059669;
     
     /* Font size scaling */
     font-size: 16px;
@@ -21,13 +25,33 @@
   :root[data-font-size="pequena"] { font-size: 14px; }
   :root[data-font-size="media"] { font-size: 16px; }
   :root[data-font-size="grande"] { font-size: 18px; }
+  :root[data-font-size="extra_grande"] { font-size: 22px; }
 
   .dark {
-    --bg-main: #0f172a;
-    --bg-card: #1e293b;
-    --text-main: #f1f5f9;
+    --bg-main: #020617;
+    --bg-card: #0f172a;
+    --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --border-color: #334155;
+    --border-color: #1e293b;
+    --accent-color: #10b981;
+  }
+
+  :root[data-layout="alto_contraste"] {
+    --bg-main: #ffffff;
+    --bg-card: #ffffff;
+    --text-main: #000000;
+    --text-muted: #000000;
+    --border-color: #000000;
+    --accent-color: #0000ff;
+  }
+
+  .dark[data-layout="alto_contraste"] {
+    --bg-main: #000000;
+    --bg-card: #000000;
+    --text-main: #ffffff;
+    --text-muted: #ffffff;
+    --border-color: #ffffff;
+    --accent-color: #ffff00;
   }
 
   body {

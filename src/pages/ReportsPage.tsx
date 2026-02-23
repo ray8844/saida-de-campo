@@ -34,7 +34,7 @@ import {
 } from 'recharts';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '../lib/utils';
+import { cn, formatDate } from '../lib/utils';
 import { isSupabaseConfigured } from '../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -104,10 +104,10 @@ export function ReportsPage() {
     doc.text(title, 14, 22);
     
     doc.setFontSize(11);
-    doc.text(`Período: ${format(new Date(filters.startDate), 'dd/MM/yyyy')} até ${format(new Date(filters.endDate), 'dd/MM/yyyy')}`, 14, 30);
+    doc.text(`Período: ${formatDate(filters.startDate)} até ${formatDate(filters.endDate)}`, 14, 30);
 
     const tableData = assignments.map(a => [
-      format(new Date(a.data_saida), 'dd/MM/yyyy'),
+      formatDate(a.data_saida),
       a.irmao?.nome_completo || 'N/A',
       a.territorio?.nome_territorio || 'N/A',
       a.status === 'concluido' ? 'Concluído' : 'Pendente'
@@ -293,7 +293,7 @@ export function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <StatCard label="Total de Participações" value={assignments.length} icon={User} color="blue" />
               <StatCard label="Territórios Diferentes" value={new Set(assignments.map(a => a.territorio_id)).size} icon={MapIcon} color="emerald" />
-              <StatCard label="Última Saída" value={format(new Date(assignments[0].data_saida), 'dd/MM/yyyy')} icon={Calendar} color="amber" />
+              <StatCard label="Última Saída" value={formatDate(assignments[0].data_saida)} icon={Calendar} color="amber" />
             </div>
           )}
 
@@ -301,7 +301,7 @@ export function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <StatCard label="Total de Utilizações" value={assignments.length} icon={MapIcon} color="blue" />
               <StatCard label="Irmãos Diferentes" value={new Set(assignments.map(a => a.irmao_id)).size} icon={User} color="emerald" />
-              <StatCard label="Última Utilização" value={format(new Date(assignments[0].data_saida), 'dd/MM/yyyy')} icon={Calendar} color="amber" />
+              <StatCard label="Última Utilização" value={formatDate(assignments[0].data_saida)} icon={Calendar} color="amber" />
             </div>
           )}
 
@@ -331,7 +331,7 @@ export function ReportsPage() {
                       assignments.map((a) => (
                         <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                            {format(new Date(a.data_saida), 'dd/MM/yyyy')}
+                            {formatDate(a.data_saida)}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">

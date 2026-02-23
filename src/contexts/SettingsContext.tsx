@@ -59,6 +59,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     // Apply font size
     root.setAttribute('data-font-size', settings.font_size);
+    // Apply layout mode (high contrast)
+    root.setAttribute('data-layout', settings.layout_mode);
   }, [settings]);
 
   const updateSettings = async (newSettings: Partial<Settings>) => {

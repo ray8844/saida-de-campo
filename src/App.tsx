@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { PageHeader, PlaceholderCard } from './components/Layout';
 import { GroupsPage } from './pages/GroupsPage';
@@ -16,14 +16,46 @@ import { brotherService } from './services/brotherService';
 import { territoryService } from './services/territoryService';
 import { fieldService } from './services/fieldService';
 import { FieldServiceAssignment } from './types';
-import { cn } from './lib/utils';
+import { cn, formatDate, isTodayOrFuture } from './lib/utils';
 import { isSupabaseConfigured } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertTriangle, Map, Users, UserCircle, Calendar as CalendarIcon, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import { AlertTriangle, Map, Users, UserCircle, Calendar as CalendarIcon, CheckCircle2, Clock, Sparkles, X } from 'lucide-react';
+
+function TerritoryImageModal({ imageUrl, territoryName, onClose }: { imageUrl: string, territoryName: string, onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={onClose}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          className="relative max-w-4xl w-full bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{territoryName}</h3>
+            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+              <X size={20} className="text-slate-500" />
+            </button>
+          </div>
+          <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800">
+            <img 
+              src={imageUrl} 
+              alt={territoryName} 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+}
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const location = window.location.pathname;
+  const location = useLocation();
+  const pathname = location.pathname;
 
   if (loading) {
     return (
@@ -34,7 +66,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Allow public access to Dashboard and Login
-  const isPublicPath = location === '/' || location === '/login';
+  const isPublicPath = pathname === '/' || pathname === '/login';
 
   if (!user && !isPublicPath) {
     return <AuthPage />;
@@ -62,6 +94,7 @@ function Dashboard() {
   const [upcoming, setUpcoming] = React.useState<FieldServiceAssignment[]>([]);
   const [nextAssignmentsByGroup, setNextAssignmentsByGroup] = React.useState<FieldServiceAssignment[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [selectedTerritoryImage, setSelectedTerritoryImage] = React.useState<{ url: string, name: string } | null>(null);
 
   React.useEffect(() => {
     const loadDashboardData = async () => {
@@ -94,7 +127,7 @@ function Dashboard() {
             .filter(a => a.grupo_id === group.id)
             .sort((a, b) => new Date(a.data_saida).getTime() - new Date(b.data_saida).getTime());
           
-          const next = groupAssignments.find(a => new Date(a.data_saida) >= today);
+          const next = groupAssignments.find(a => isTodayOrFuture(a.data_saida));
           if (next) {
             nextByGroup.push(next);
           }
@@ -179,12 +212,15 @@ function Dashboard() {
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-100 text-xs font-medium">
                       <CalendarIcon size={14} />
-                      {new Date(next.data_saida).toLocaleDateString()}
+                      {formatDate(next.data_saida)}
                     </div>
                   </div>
                   
                   <div>
-                    <h4 className="text-2xl font-black tracking-tight leading-tight mb-1">
+                    <h4 
+                      className="text-2xl font-black tracking-tight leading-tight mb-1 cursor-pointer hover:text-emerald-200 transition-colors"
+                      onClick={() => next.territorio?.mapa_imagem_url && setSelectedTerritoryImage({ url: next.territorio.mapa_imagem_url, name: next.territorio.nome_territorio })}
+                    >
                       {next.territorio?.nome_territorio}
                     </h4>
                     <div className="flex items-center gap-2 text-emerald-50">
@@ -255,11 +291,14 @@ function Dashboard() {
                     <Map size={20} />
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900 dark:text-white">
+                    <p 
+                      className="font-medium text-slate-900 dark:text-white cursor-pointer hover:text-emerald-600 transition-colors"
+                      onClick={() => item.territorio?.mapa_imagem_url && setSelectedTerritoryImage({ url: item.territorio.mapa_imagem_url, name: item.territorio.nome_territorio })}
+                    >
                       {item.territorio?.nome_territorio}
                     </p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {item.irmao?.nome_completo} • {new Date(item.data_saida).toLocaleDateString()}
+                      {item.irmao?.nome_completo} • {formatDate(item.data_saida)}
                     </p>
                   </div>
                 </div>
@@ -277,6 +316,14 @@ function Dashboard() {
           )}
         </div>
       </div>
+
+      {selectedTerritoryImage && (
+        <TerritoryImageModal 
+          imageUrl={selectedTerritoryImage.url}
+          territoryName={selectedTerritoryImage.name}
+          onClose={() => setSelectedTerritoryImage(null)}
+        />
+      )}
     </div>
   );
 }

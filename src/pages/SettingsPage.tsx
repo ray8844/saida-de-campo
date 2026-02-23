@@ -82,11 +82,12 @@ export function SettingsPage() {
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Tamanho da Fonte</h3>
           </div>
           
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { id: 'pequena', label: 'Pequena', size: 'text-xs' },
               { id: 'media', label: 'Média', size: 'text-sm' },
               { id: 'grande', label: 'Grande', size: 'text-base' },
+              { id: 'extra_grande', label: 'Extra G.', size: 'text-xl' },
             ].map((font) => (
               <button
                 key={font.id}
@@ -111,13 +112,14 @@ export function SettingsPage() {
             <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg">
               <LayoutIcon size={20} />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Modo de Layout</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Acessibilidade</h3>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {[
               { id: 'padrao', label: 'Padrão' },
               { id: 'compacto', label: 'Compacto' },
+              { id: 'alto_contraste', label: 'Alto Contraste' },
             ].map((layout) => (
               <button
                 key={layout.id}
@@ -129,7 +131,7 @@ export function SettingsPage() {
                     : "border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
-                <span className="text-sm font-medium">{layout.label}</span>
+                <span className="text-xs font-medium">{layout.label}</span>
               </button>
             ))}
           </div>

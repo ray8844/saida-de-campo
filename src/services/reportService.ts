@@ -56,7 +56,8 @@ export const reportService = {
         };
       }
       
-      const week = format(new Date(a.data_saida), 'yyyy-ww');
+      const [year, month, day] = a.data_saida.split('-').map(Number);
+      const week = format(new Date(year, month - 1, day), 'yyyy-ww');
       weeklyDistribution[week] = (weeklyDistribution[week] || 0) + 1;
     });
 

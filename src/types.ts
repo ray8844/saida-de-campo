@@ -50,8 +50,8 @@ export type FieldServiceInput = Omit<FieldServiceAssignment, 'id' | 'created_at'
 export interface Profile {
   id: string;
   theme: 'claro' | 'escuro' | 'automatico';
-  font_size: 'pequena' | 'media' | 'grande';
-  layout_mode: 'padrao' | 'compacto';
+  font_size: 'pequena' | 'media' | 'grande' | 'extra_grande';
+  layout_mode: 'padrao' | 'compacto' | 'alto_contraste';
   updated_at?: string;
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Trash2, Calendar as CalendarIcon, Users, Map as MapIcon, CheckCircle2, Clock, Sparkles, Download, Edit2, AlertCircle } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Calendar as CalendarIcon, Users, Map as MapIcon, CheckCircle2, Clock, Sparkles, Download, Edit2, AlertCircle, FileText } from 'lucide-react';
 import { PageHeader } from '../components/Layout';
 import { fieldService } from '../services/fieldService';
 import { groupService } from '../services/groupService';
@@ -9,7 +9,7 @@ import { FieldServiceAssignment, Group, Brother, Territory } from '../types';
 import { EditAssignmentModal } from '../components/EditAssignmentModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, formatDate } from '../lib/utils';
 import { format } from 'date-fns';
 
 export function FieldServicePage() {
@@ -22,6 +22,7 @@ export function FieldServicePage() {
   
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedGroup, setSelectedGroup] = useState('');
+  const [viewMode, setViewMode] = useState<'filter' | 'all'>('filter');
   
   const [editingAssignment, setEditingAssignment] = useState<FieldServiceAssignment | null>(null);
   
@@ -60,10 +61,19 @@ export function FieldServicePage() {
   };
 
   const loadAssignments = async () => {
-    if (!selectedDate || !selectedGroup) return;
     setIsLoading(true);
     try {
-      const data = await fieldService.getByDateAndGroup(selectedDate, selectedGroup);
+      let data;
+      if (viewMode === 'all') {
+        data = await fieldService.getAll();
+      } else {
+        if (!selectedDate || !selectedGroup) {
+          setAssignments([]);
+          setIsLoading(false);
+          return;
+        }
+        data = await fieldService.getByDateAndGroup(selectedDate, selectedGroup);
+      }
       setAssignments(data);
     } catch (error) {
       console.error('Error loading assignments:', error);
@@ -78,7 +88,7 @@ export function FieldServicePage() {
 
   useEffect(() => {
     loadAssignments();
-  }, [selectedDate, selectedGroup]);
+  }, [selectedDate, selectedGroup, viewMode]);
 
   const handleGenerate = async () => {
     if (!selectedDate || !selectedGroup) {
@@ -169,62 +179,91 @@ export function FieldServicePage() {
       />
 
       {/* Controls Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-              <CalendarIcon size={14} />
-              Data da Saída
-            </label>
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all dark:text-white"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-              <Users size={14} />
-              Grupo de Campo
-            </label>
-            <select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-              className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all dark:text-white"
-            >
-              {groups.map(g => (
-                <option key={g.id} value={g.id}>{g.nome_do_grupo}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-end gap-3 lg:col-span-2">
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating || isLoading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
-            >
-              {isGenerating ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Sparkles size={20} />
-                  Gerar Saída
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleDeleteAll}
-              disabled={assignments.length === 0 || isLoading}
-              className="px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold hover:bg-red-100 transition-all disabled:opacity-50"
-              title="Excluir toda a saída desta data"
-            >
-              <Trash2 size={20} />
-            </button>
-          </div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl w-fit">
+          <button
+            onClick={() => setViewMode('filter')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+              viewMode === 'filter' 
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm" 
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            )}
+          >
+            <Filter size={16} />
+            Filtrar Saída
+          </button>
+          <button
+            onClick={() => setViewMode('all')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+              viewMode === 'all' 
+                ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm" 
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            )}
+          >
+            <FileText size={16} />
+            Todas as Saídas
+          </button>
         </div>
+
+        {viewMode === 'filter' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <CalendarIcon size={14} />
+                Data da Saída
+              </label>
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all dark:text-white"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <Users size={14} />
+                Grupo de Campo
+              </label>
+              <select
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all dark:text-white"
+              >
+                {groups.map(g => (
+                  <option key={g.id} value={g.id}>{g.nome_do_grupo}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-end gap-3 lg:col-span-2">
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || isLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles size={20} />
+                    Gerar Saída
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                disabled={assignments.length === 0 || isLoading}
+                className="px-4 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold hover:bg-red-100 transition-all disabled:opacity-50"
+                title="Excluir toda a saída desta data"
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Assignments Table */}
@@ -233,6 +272,7 @@ export function FieldServicePage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 dark:bg-slate-800/50">
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Data</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Irmão</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Território</th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
@@ -242,14 +282,14 @@ export function FieldServicePage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                     Carregando designações...
                   </td>
                 </tr>
               ) : assignments.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                    Nenhuma designação para esta data. Clique em "Gerar Saída".
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                    Nenhuma designação encontrada. {viewMode === 'filter' ? 'Clique em "Gerar Saída".' : ''}
                   </td>
                 </tr>
               ) : (
@@ -261,6 +301,12 @@ export function FieldServicePage() {
                     key={a.id} 
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
                   >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                        <CalendarIcon size={14} />
+                        {formatDate(a.data_saida)}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-xs font-bold">
