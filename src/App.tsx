@@ -19,7 +19,7 @@ import { FieldServiceAssignment } from './types';
 import { cn, formatDate, isTodayOrFuture } from './lib/utils';
 import { isSupabaseConfigured } from './lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertTriangle, Map, Users, UserCircle, Calendar as CalendarIcon, CheckCircle2, Clock, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, Map, Users, UserCircle, Calendar as CalendarIcon, CheckCircle2, Clock, Sparkles, X, MessageCircle } from 'lucide-react';
 
 function TerritoryImageModal({ imageUrl, territoryName, onClose }: { imageUrl: string, territoryName: string, onClose: () => void }) {
   return (
@@ -150,6 +150,24 @@ function Dashboard() {
     loadDashboardData();
   }, []);
 
+  const handleWhatsApp = (item: FieldServiceAssignment) => {
+    if (!item.irmao?.telefone) {
+      alert('Irmão não possui telefone cadastrado.');
+      return;
+    }
+
+    const message = `Informamos que o irmão ${item.irmao.nome_completo} foi designado para presidir a saída de campo do grupo ${item.grupo?.nome_do_grupo || ''} designado para o(a) ${item.territorio?.nome_territorio || ''}, a ser realizada no dia ${formatDate(item.data_saida)}.
+
+Hebreus 10:23: “Apeguemo-nos firmemente à declaração pública da nossa esperança, sem vacilar, pois aquele que prometeu é fiel.”
+
+Atenciosamente,
+Fruitful Harvest`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const phone = item.irmao.telefone.replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+  };
+
   return (
     <div className="space-y-8">
       <PageHeader 
@@ -224,8 +242,8 @@ function Dashboard() {
                       {next.territorio?.nome_territorio}
                     </h4>
                     <div className="flex items-center gap-2 text-emerald-50">
-                      <UserCircle size={18} className="text-emerald-200" />
-                      <span className="font-semibold">{next.irmao?.nome_completo}</span>
+                      <UserCircle size={20} className="text-emerald-200" />
+                      <span className="text-xl font-bold">{next.irmao?.nome_completo}</span>
                     </div>
                   </div>
 
@@ -245,31 +263,6 @@ function Dashboard() {
           </div>
         </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Territórios Ativos', value: stats.territories, color: 'bg-blue-500', icon: Map },
-          { label: 'Irmãos Cadastrados', value: stats.brothers, color: 'bg-emerald-500', icon: UserCircle },
-          { label: 'Grupos de Campo', value: stats.groups, color: 'bg-amber-500', icon: Users },
-        ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group"
-          >
-            <div className="relative z-10">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.label}</p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">
-                {isLoading ? '...' : stat.value}
-              </p>
-            </div>
-            <stat.icon className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-slate-100 dark:text-slate-800 transition-transform group-hover:scale-110" />
-            <div className={`absolute bottom-0 left-0 h-1 w-full ${stat.color} opacity-20`} />
-          </motion.div>
-        ))}
-      </div>
       
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
@@ -302,14 +295,23 @@ function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-                  item.status === 'concluido' 
-                    ? "bg-emerald-100 text-emerald-700" 
-                    : "bg-amber-100 text-amber-700"
-                )}>
-                  {item.status === 'concluido' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                  {item.status === 'concluido' ? 'Concluído' : 'Pendente'}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleWhatsApp(item)}
+                    className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
+                    title="Enviar aviso por WhatsApp"
+                  >
+                    <MessageCircle size={20} />
+                  </button>
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                    item.status === 'concluido' 
+                      ? "bg-emerald-100 text-emerald-700" 
+                      : "bg-amber-100 text-amber-700"
+                  )}>
+                    {item.status === 'concluido' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                    {item.status === 'concluido' ? 'Concluído' : 'Pendente'}
+                  </div>
                 </div>
               </div>
             ))

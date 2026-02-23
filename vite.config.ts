@@ -14,8 +14,8 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: 'Fruitful Harvest',
-          short_name: 'Fruitful Harvest',
+          name: 'Organizador de Saída de Campo',
+          short_name: 'Organizador',
           description: 'Sistema de gestão de territórios e saídas de campo.',
           theme_color: '#1d63ed',
           background_color: '#f8fafc',
